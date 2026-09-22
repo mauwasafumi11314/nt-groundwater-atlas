@@ -81,9 +81,13 @@ prose alone is not enough.
   sufficiency gate, per-bore runner.
 - `ntgw.levels` — m AHD derivation, collar-RL flagging.
 - `ntgw.scope` — excluded-theme guard, wired into the GeoPackage writer.
+- `ntgw.inspect` / `make inspect` — reports the structure of everything in
+  `data/raw/` (fields, dtypes, null fractions, declared CRS vs actual
+  coordinates, code lists, dd/mm vs mm/dd ambiguity) so mappings can be written
+  from evidence. Reports; never resolves.
 - `ntgw.db`, `ntgw.export.gpkg`, `sql/001_schema.sql`, docker-compose,
   `environment.yml`, `make doctor`.
-- 81 tests. `scripts/demo_phase1.py` runs the pipeline end to end on synthetic data.
+- 100 tests. `scripts/demo_phase1.py` runs the pipeline end to end on synthetic data.
 
 ### Findings that changed the design
 - **`allow_ballpark=False` and `only_best=True` do not catch a missing NTv2
@@ -116,7 +120,8 @@ prose alone is not enough.
 - No real data has been read, so no ingest mapping exists.
 
 ### Open questions for the user
-- Where is the raw data? `data/raw/` is still empty.
+- Where is the raw data? `data/raw/` is still empty. Once it is there,
+  `make inspect` produces everything needed to write the mappings.
 - Sufficiency thresholds are provisional pending the record-length distribution.
 - Residual over-rejection at high autocorrelation: accept, or add a block
   bootstrap?
