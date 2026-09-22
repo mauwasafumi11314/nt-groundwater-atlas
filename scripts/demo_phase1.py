@@ -18,10 +18,10 @@ sys.path.insert(0, str(ROOT / "tests"))
 
 import geopandas as gpd  # noqa: E402
 import pandas as pd  # noqa: E402
-from fixtures.synthetic import hydrograph, synthetic_bores, synthetic_wcd_polygon  # noqa: E402
 from shapely.geometry import Point  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
+from fixtures.synthetic import hydrograph, synthetic_bores, synthetic_wcd_polygon  # noqa: E402
 from ntgw.crs import ATLAS_EPSG  # noqa: E402
 from ntgw.db import apply_schema, get_engine  # noqa: E402
 from ntgw.export.gpkg import write_layers  # noqa: E402
@@ -68,10 +68,15 @@ def main() -> int:
                     "ST_SetSRID(ST_MakePoint(:x,:y),:srid), :rl, :rls, :ds, :sf, :sc)"
                 ),
                 {
-                    "bid": row.bore_id, "x": row.x, "y": row.y, "srid": ATLAS_EPSG,
+                    "bid": row.bore_id,
+                    "x": row.x,
+                    "y": row.y,
+                    "srid": ATLAS_EPSG,
                     "rl": None if pd.isna(row.collar_rl_m_ahd) else float(row.collar_rl_m_ahd),
-                    "rls": row.collar_rl_source, "ds": row.datum_status,
-                    "sf": row.source_file, "sc": row.source_crs,
+                    "rls": row.collar_rl_source,
+                    "ds": row.datum_status,
+                    "sf": row.source_file,
+                    "sc": row.source_crs,
                 },
             )
 
@@ -92,7 +97,8 @@ def main() -> int:
                     "ON CONFLICT (bore_id, observed_at) DO NOTHING"
                 ),
                 {
-                    "bid": row.bore_id, "ts": row.observed_at,
+                    "bid": row.bore_id,
+                    "ts": row.observed_at,
                     "dtw": float(row.depth_to_water_m),
                     "ahd": None if pd.isna(row.level_m_ahd) else float(row.level_m_ahd),
                 },
@@ -116,15 +122,19 @@ def main() -> int:
 
     # --- report -----------------------------------------------------------
     shapes = dict(zip(bores.bore_id, SHAPES, strict=True))
-    print(f"{'bore':<8} {'shape':<20} {'basis':<17} {'class':<18} "
-          f"{'slope m/yr':>11} {'p':>9} {'eff n':>7}")
+    print(
+        f"{'bore':<8} {'shape':<20} {'basis':<17} {'class':<18} "
+        f"{'slope m/yr':>11} {'p':>9} {'eff n':>7}"
+    )
     print("-" * 96)
     for r in results:
         slope = f"{r.sens_slope_m_per_year:+.4f}" if r.sens_slope_m_per_year is not None else "-"
         p = f"{r.p_value:.3g}" if r.p_value is not None else "-"
         eff = f"{r.effective_n:.0f}/{r.n_months_present}" if r.effective_n else "-"
-        print(f"{r.bore_id:<8} {shapes[r.bore_id]:<20} {r.basis:<17} {r.trend_class:<18} "
-              f"{slope:>11} {p:>9} {eff:>7}")
+        print(
+            f"{r.bore_id:<8} {shapes[r.bore_id]:<20} {r.basis:<17} {r.trend_class:<18} "
+            f"{slope:>11} {p:>9} {eff:>7}"
+        )
         if r.insufficient_reason:
             print(f"{'':<8} -> {r.insufficient_reason}")
 
