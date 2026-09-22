@@ -1,0 +1,20 @@
+# PostGIS for the atlas. The analysis itself runs in the conda environment, not
+# in the database, so the NTv2 grid requirement lives in environment.yml rather
+# than here - PostGIS stores geometry that Python has already transformed.
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: ntgw-postgis
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ntgw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ntgw}
+      POSTGRES_DB: ${POSTGRES_DB:-ntgw}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ntgw} -d ${POSTGRES_DB:-ntgw}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

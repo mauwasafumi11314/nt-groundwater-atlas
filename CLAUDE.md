@@ -70,17 +70,53 @@ prose alone is not enough.
 
 | Phase | Status | Gate |
 |---|---|---|
-| 0 — repo scaffolding | CLAUDE.md + data guard written | — |
-| 1 — ingest + trends | **Not started** — blocked, awaiting plan approval and raw data | `make test` + output shown |
+| 0 — scaffolding | Done | — |
+| 1 — ingest + trends | **Analysis built and tested; ingest blocked on raw data** | `make test` + output shown |
 | 2 — hydrostratigraphy | Not started | — |
 | 3 — stress index | Not started | — |
 
-### Current state
-- Repository was empty at session start; branch `claude/great-davinci-ti3mj3`.
-- `data/raw/` **does not exist** and contains no files. No raw data has been
-  inspected, so **no field mappings exist and none may be written yet.**
-- Phase 1 plan proposed, awaiting user approval.
+### Built (phase 1, data-independent parts)
+- `ntgw.crs` — EPSG:7853 policy and NTv2 grid enforcement.
+- `ntgw.trends` — Mann-Kendall, Sen's slope, two-pass de-seasonalisation,
+  sufficiency gate, per-bore runner.
+- `ntgw.levels` — m AHD derivation, collar-RL flagging.
+- `ntgw.scope` — excluded-theme guard, wired into the GeoPackage writer.
+- `ntgw.db`, `ntgw.export.gpkg`, `sql/001_schema.sql`, docker-compose,
+  `environment.yml`, `make doctor`.
+- 81 tests. `scripts/demo_phase1.py` runs the pipeline end to end on synthetic data.
+
+### Findings that changed the design
+- **`allow_ballpark=False` and `only_best=True` do not catch a missing NTv2
+  grid.** PROJ ranks the 7-parameter Helmert ("GDA94 to GDA2020 (1)") as the
+  best *available* operation with a 0.01 m stated accuracy, so neither flag
+  fires and the Helmert is used silently. Enforcement must name the required
+  grid and verify the resolved pipeline uses it. Pinned by
+  `test_helmert_fallback_is_not_silently_accepted`.
+- **PostGIS coerces SRID 0 to the column SRID.** Geometry offered without a
+  SRID is relabelled 7853 rather than rejected, so untransformed GDA94
+  coordinates would land ~1.8 m out with the table looking consistent. Guarded
+  at write time in `ntgw.db.require_atlas_crs`.
+- **Uncorrected Mann-Kendall is unusable on hydrographs.** On trendless AR(1)
+  series with phi=0.85 it rejects ~51% of the time against a nominal 5%.
+  Hamed & Rao with Anderson bounds, truncated at the first insignificant lag,
+  brings that to ~13% (n=120) and ~7% (n=240) — better, not fixed. Summing all
+  lags is unstable and can deflate the variance. `autocorrelation_factor` and
+  `effective_n` are stored for the phase-3 confidence layer.
+- **One-pass de-seasonalising leaks the trend into the climatology**, leaving a
+  sawtooth of amplitude ~ slope x 11 months. Two-pass removes it exactly.
+
+### Untested / unverified
+- The ICSM NTv2 grid is **not installed in the dev container** (`cdn.proj.org`
+  and the conda channels are blocked by network policy), so the grid *success*
+  path is skipped, not passing. `make doctor` fails accordingly. Needs a run on
+  macOS with `proj-data`.
+- `environment.yml` has never been resolved on macOS.
+- `docker-compose.yml` has never been started (image pull blocked); PostGIS was
+  tested against a local 16/3.4 install instead.
+- No real data has been read, so no ingest mapping exists.
 
 ### Open questions for the user
-- Where is the raw data? `data/raw/` is empty/absent.
-- Dependency list for phase 1 needs approval before anything is installed.
+- Where is the raw data? `data/raw/` is still empty.
+- Sufficiency thresholds are provisional pending the record-length distribution.
+- Residual over-rejection at high autocorrelation: accept, or add a block
+  bootstrap?

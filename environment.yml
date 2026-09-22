@@ -1,0 +1,33 @@
+# conda-forge / macOS development environment.
+#
+# proj-data is not optional: it carries the ICSM NTv2 grid that
+# ntgw.crs requires for any GDA94 source. Without it the project refuses to
+# transform rather than silently using PROJ's Helmert approximation.
+name: ntgw
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+
+  # Geospatial
+  - geopandas>=1.0
+  - shapely>=2.0
+  - pyproj>=3.6
+  - pyogrio>=0.8
+  - gdal>=3.8
+  - proj-data          # ICSM NTv2 grids - required, see ntgw/crs.py
+
+  # Analysis
+  - pandas>=2.0
+  - numpy>=1.26
+  - scipy>=1.11
+
+  # Database
+  - sqlalchemy>=2.0
+  - geoalchemy2>=0.14
+  - psycopg2>=2.9
+
+  # Tooling
+  - pytest>=8.0
+  - ruff>=0.5
+  - make

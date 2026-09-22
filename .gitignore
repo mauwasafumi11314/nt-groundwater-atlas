@@ -88,6 +88,12 @@ Thumbs.db
 *.swp
 
 # ---------------------------------------------------------------------------
-# Synthetic test fixtures ARE tracked — they contain no real data.
+# Synthetic test fixtures ARE tracked - they contain no real data.
 # ---------------------------------------------------------------------------
 !tests/fixtures/**
+
+# ...but never build artefacts inside them. This must come AFTER the negation
+# above: in .gitignore the last matching rule wins, so re-including
+# tests/fixtures/** would otherwise drag __pycache__ back in with it.
+__pycache__/
+*.py[cod]

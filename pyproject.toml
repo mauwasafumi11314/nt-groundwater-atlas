@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ntgw"
+version = "0.1.0"
+description = "Groundwater stress atlas for Central Australia (Western Davenport WCD pilot)"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "needs_grid: requires the real ICSM NTv2 grid (proj-data) to be installed",
+    "needs_db: requires a running PostGIS instance",
+    "slow: Monte Carlo and other long-running checks",
+]
+filterwarnings = ["error::DeprecationWarning:ntgw.*"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
