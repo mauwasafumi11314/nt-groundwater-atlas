@@ -1,0 +1,75 @@
+#!/bin/sh
+# NT Groundwater Stress Atlas — pre-commit guard.
+#
+# .gitignore is not sufficient: `git add -f` walks straight past it. This hook
+# is the enforcement. Install with `make install-hooks`.
+#
+# Blocks:
+#   1. anything staged under data/ (except README.md / .gitkeep)
+#   2. data-bearing file extensions outside tests/fixtures/
+#   3. files larger than MAX_KB
+#   4. FME workspaces (out of scope for this project)
+#
+# Bypass is possible with `git commit --no-verify`. Do not.
+
+set -u
+
+MAX_KB=512
+fail=0
+
+note() { printf '  %s\n' "$1" >&2; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# --- 1. Nothing under data/ ------------------------------------------------
+bad_data=$(printf '%s\n' "$staged" \
+  | grep -E '^data/' \
+  | grep -vE '^data/(README\.md|\.gitkeep)$' || true)
+
+if [ -n "$bad_data" ]; then
+  printf '\nBLOCKED: data/ is never committed (CLAUDE.md).\n' >&2
+  printf '%s\n' "$bad_data" | while IFS= read -r f; do note "$f"; done
+  fail=1
+fi
+
+# --- 2. Data-bearing extensions outside tests/fixtures/ --------------------
+bad_ext=$(printf '%s\n' "$staged" \
+  | grep -viE '^tests/fixtures/' \
+  | grep -iE '\.(gpkg|shp|shx|dbf|prj|sbn|sbx|cpg|qix|tif|tiff|img|ecw|jp2|las|laz|nc|h5|hdf5|grd|asc|xyz|csv|tsv|xls|xlsx|mdb|accdb|sqlite|db|dump|parquet|zip|7z|tar|tgz|gsb)$' || true)
+
+if [ -n "$bad_ext" ]; then
+  printf '\nBLOCKED: data-bearing files may only live in tests/fixtures/ (synthetic only).\n' >&2
+  printf '%s\n' "$bad_ext" | while IFS= read -r f; do note "$f"; done
+  fail=1
+fi
+
+# --- 3. FME workspaces -----------------------------------------------------
+bad_fme=$(printf '%s\n' "$staged" | grep -iE '\.fmwt?$' || true)
+if [ -n "$bad_fme" ]; then
+  printf '\nBLOCKED: FME workspaces are out of scope for this project.\n' >&2
+  printf '%s\n' "$bad_fme" | while IFS= read -r f; do note "$f"; done
+  fail=1
+fi
+
+# --- 4. Oversized files ----------------------------------------------------
+# Real extracts are big; synthetic fixtures are not. Size is a second net.
+for f in $staged; do
+  [ -f "$f" ] || continue
+  kb=$(( $(wc -c < "$f") / 1024 ))
+  if [ "$kb" -gt "$MAX_KB" ]; then
+    if [ "$fail" -eq 0 ]; then
+      printf '\nBLOCKED: file(s) over %s KB — real data does not belong in git.\n' "$MAX_KB" >&2
+    fi
+    note "$f (${kb} KB)"
+    fail=1
+  fi
+done
+
+if [ "$fail" -ne 0 ]; then
+  printf '\nNothing was committed. Move the file out of the repo, or add it to\n' >&2
+  printf 'tests/fixtures/ only if it is synthetic.\n\n' >&2
+  exit 1
+fi
+
+exit 0

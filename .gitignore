@@ -1,0 +1,93 @@
+# ---------------------------------------------------------------------------
+# NEVER COMMIT DATA. This is a hard project rule (see CLAUDE.md).
+# Enforced additionally by scripts/hooks/pre-commit (`make install-hooks`).
+# ---------------------------------------------------------------------------
+# 'data/*' not 'data/': git cannot re-include a file whose parent directory
+# is excluded, so the negations below would silently do nothing.
+data/*
+!data/.gitkeep
+!data/README.md
+
+# Spatial / tabular data formats, wherever they appear.
+# Synthetic test fixtures are the only exception (see negations at the end).
+*.gpkg
+*.gdb/
+*.shp
+*.shx
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.cpg
+*.qix
+*.tif
+*.tiff
+*.img
+*.ecw
+*.jp2
+*.las
+*.laz
+*.nc
+*.h5
+*.hdf5
+*.grd
+*.asc
+*.xyz
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.mdb
+*.accdb
+*.sqlite
+*.db
+*.dump
+*.sql.gz
+*.parquet
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.gsb
+
+# FME workspaces are out of scope for this project.
+*.fmw
+*.fmwt
+
+# Outputs
+outputs/
+exports/
+*.log
+
+# Postgres volume
+pgdata/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---------------------------------------------------------------------------
+# Synthetic test fixtures ARE tracked — they contain no real data.
+# ---------------------------------------------------------------------------
+!tests/fixtures/**
