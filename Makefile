@@ -5,7 +5,7 @@ SHELL := /bin/sh
 PYTHON ?= python
 COMPOSE ?= docker compose
 
-.PHONY: help install-hooks check-hooks doctor db-up db-down db-wait schema test test-fast lint fmt clean
+.PHONY: help install-hooks check-hooks doctor inspect db-up db-down db-wait schema test test-fast lint fmt clean
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -25,6 +25,9 @@ check-hooks: ## Fail if the pre-commit guard is not installed / is stale
 
 doctor: ## Report whether this environment can run the atlas (fails if it cannot)
 	@$(PYTHON) scripts/doctor.py
+
+inspect: ## Report the structure of everything in data/raw/ (RAW ?= data/raw)
+	@$(PYTHON) scripts/inspect_raw.py $(RAW) --out outputs/raw_inventory.txt
 
 db-up: ## Start PostGIS
 	@$(COMPOSE) up -d postgis
