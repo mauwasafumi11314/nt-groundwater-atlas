@@ -135,6 +135,29 @@ prose alone is not enough.
   tested against a local 16/3.4 install instead.
 - No real data has been read, so no ingest mapping exists.
 
+### Candidate data sources (found by search; NOT yet verified)
+
+Every one of these was blocked by the dev container's egress proxy, so the
+formats and contents below come from search summaries, not from opening them.
+Field listings still have to come from `make inspect` after download. Nothing
+here is a mapping.
+
+| What | Source |
+|---|---|
+| Bores + groundwater level time series + water quality | NTG Open Data Portal, "Northern Territory bore locations, water quality and groundwater levels" — reportedly an ESRI Shapefile geospatial data package (zip, with metadata); upstream system is Hydstra |
+| Groundwater licence extraction points | NTG Open Data Portal, "NT Water Groundwater Licence Extraction Points" |
+| Water allocation planning areas | NTG Open Data Portal, "NT Water Allocation Planning Areas (WAP)" — note WAP areas are *within* water control districts and are not the same boundary as the WCD |
+| Alternative bore/level source | BoM Australian Groundwater Explorer / National Groundwater Information System — reportedly offers per-jurisdiction download as File Geodatabase, CSV, Shapefile, KML, including level time series |
+| Phase 2 hydrostratigraphy | Geoscience Australia, "Delineation of geology and groundwater resources in a frontier region: Western Davenport"; National Water Grid "Western Davenport hydrostratigraphy" |
+
+**Flag to resolve on first inspection:** one search summary describes a bore AHD
+attribute derived from SRTM rather than survey. If the collar RL is an SRTM
+elevation, it is not a surveyed RL. A constant per-bore offset does not affect
+that bore's *trend* — it cancels — but it makes absolute m AHD and any
+cross-bore head comparison unreliable, which matters for phase 2 water-table
+surfaces. `collar_rl_source` already exists to carry this distinction; the
+`datum_status` enum may need a third value separating surveyed from modelled.
+
 ### Open questions for the user
 - Where is the raw data? `data/raw/` is still empty. Once it is there,
   `make inspect` produces everything needed to write the mappings.
