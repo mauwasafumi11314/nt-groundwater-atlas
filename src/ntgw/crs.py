@@ -33,6 +33,19 @@ from pyproj.transformer import Transformer, TransformerGroup
 #: Every table, every export, every intermediate.
 ATLAS_EPSG = 7853
 
+#: Coordinates that are plausibly MGA zone 53, used to catch a wrongly declared
+#: source CRS. A bad declaration transforms without error and lands the data
+#: somewhere absurd, so the check is on the result, not the declaration.
+#:
+#: Derived, not guessed: zone 53 spans 132-138E, widened by the one-degree
+#: overlap real data uses, over NT latitudes 26S-10S, then rounded outward.
+MGA53_ENVELOPE = {
+    "min_x": 60_000.0,
+    "max_x": 940_000.0,
+    "min_y": 7_100_000.0,
+    "max_y": 8_900_000.0,
+}
+
 #: ICSM GDA94 -> GDA2020 grids, as PROJ names them. PROJ >= 7 distributes the
 #: NTv2 grids repackaged as GeoTIFF; the legacy .gsb names are accepted too so
 #: that a hand-installed ICSM download is still recognised.
@@ -61,6 +74,10 @@ class UnsupportedSourceDatumError(CrsPolicyError):
 
 class WrongCrsError(CrsPolicyError):
     """Something is not in EPSG:7853."""
+
+
+class OutsideZoneError(CrsPolicyError):
+    """Transformed coordinates do not fall in MGA zone 53."""
 
 
 def _grid_names(operation) -> list[str]:
@@ -224,4 +241,24 @@ def assert_atlas_crs(crs: CRS | int | str | None, what: str = "object") -> None:
         raise WrongCrsError(
             f"{what} is EPSG:{epsg if epsg else parsed.name!r}, expected EPSG:{ATLAS_EPSG} "
             f"(GDA2020 / MGA zone 53)"
+        )
+
+
+def assert_within_zone53(bounds, what: str = "layer") -> None:
+    """Raise `OutsideZoneError` if `bounds` is not plausibly MGA zone 53.
+
+    `bounds` is (minx, miny, maxx, maxy) in EPSG:7853. This catches the failure
+    a CRS check cannot: a source whose declared CRS is simply wrong transforms
+    cleanly and produces coordinates that are nowhere near the Northern
+    Territory, with nothing downstream to notice.
+    """
+    minx, miny, maxx, maxy = bounds
+    e = MGA53_ENVELOPE
+    if minx < e["min_x"] or maxx > e["max_x"] or miny < e["min_y"] or maxy > e["max_y"]:
+        raise OutsideZoneError(
+            f"{what} lands outside MGA zone 53 after transformation: "
+            f"x {minx:.6g}..{maxx:.6g}, y {miny:.6g}..{maxy:.6g}, expected "
+            f"x {e['min_x']:.6g}..{e['max_x']:.6g}, y {e['min_y']:.6g}..{e['max_y']:.6g}. "
+            f"The declared source CRS is probably wrong - a wrong declaration "
+            f"transforms without error."
         )

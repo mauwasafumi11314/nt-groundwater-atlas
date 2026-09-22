@@ -9,8 +9,9 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import Point
 
-from fixtures.synthetic import MGA53_ENVELOPE, WCD_ENVELOPE, synthetic_bores
+from fixtures.synthetic import WCD_ENVELOPE, synthetic_bores
 from ntgw import crs as C
+from ntgw.crs import MGA53_ENVELOPE
 from ntgw.db import geometry_columns, require_atlas_crs, stored_srids
 from ntgw.export.gpkg import verify_gpkg, write_layers
 

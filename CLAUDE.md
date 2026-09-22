@@ -85,9 +85,15 @@ prose alone is not enough.
   `data/raw/` (fields, dtypes, null fractions, declared CRS vs actual
   coordinates, code lists, dd/mm vs mm/dd ambiguity) so mappings can be written
   from evidence. Reports; never resolves.
+- `ntgw.ingest.load` / `ntgw.ingest.source` — the half of ingest that does not
+  need column names: open a file, establish its CRS honestly, transform through
+  the grid, and prove the result landed in zone 53. Refuses rather than guesses
+  on a missing CRS, disagreeing CRS declarations, an unnamed layer in a
+  multi-layer file, and dd/mm vs mm/dd dates. **No column mapping** — that still
+  needs the files.
 - `ntgw.db`, `ntgw.export.gpkg`, `sql/001_schema.sql`, docker-compose,
-  `environment.yml`, `make doctor`.
-- 100 tests. `scripts/demo_phase1.py` runs the pipeline end to end on synthetic data.
+  `environment.yml`, `make doctor`, `make test-strict`.
+- 124 tests. `scripts/demo_phase1.py` runs the pipeline end to end on synthetic data.
 
 ### Findings that changed the design
 - **`allow_ballpark=False` and `only_best=True` do not catch a missing NTv2
@@ -108,6 +114,16 @@ prose alone is not enough.
   `effective_n` are stored for the phase-3 confidence layer.
 - **One-pass de-seasonalising leaks the trend into the climatology**, leaving a
   sawtooth of amplitude ~ slope x 11 months. Two-pass removes it exactly.
+- **A wrong declared CRS transforms cleanly.** Nothing in the CRS machinery
+  notices; only checking where the coordinates *landed* does. `assert_within_zone53`
+  validates the result against a derived zone 53 envelope.
+- **`is_object_dtype` is not a portable text test.** pandas 2 reads strings as
+  `object`, pandas 3 as `str`, so the ambiguous-date guard was silently
+  disabled here and would have behaved differently on macOS. The check is
+  inverted now (`may_hold_text`) and pinned by a test across both dtypes.
+- **A stopped database turned four enforcement tests into skips and the suite
+  still reported green.** `make test-strict` (doctor + `--strict-skips`) makes
+  any skip a failure where the environment is supposed to be complete.
 
 ### Untested / unverified
 - The ICSM NTv2 grid is **not installed in the dev container** (`cdn.proj.org`

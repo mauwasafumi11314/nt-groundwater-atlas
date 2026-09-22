@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point, box
 
-from ntgw.inspect import _crs_verdict, _date_ambiguity, inspect_path
+from ntgw.inspect import _crs_verdict, date_ambiguity, inspect_path
 
 
 @pytest.mark.parametrize(
@@ -24,13 +24,13 @@ from ntgw.inspect import _crs_verdict, _date_ambiguity, inspect_path
     ],
 )
 def test_unambiguous_date_orders_are_identified(values, expected):
-    verdict = _date_ambiguity(pd.Series(values))
+    verdict = date_ambiguity(pd.Series(values))
     assert verdict is not None and expected in verdict
 
 
 def test_ambiguous_dates_are_flagged_not_guessed():
     """No field over 12: the order genuinely cannot be inferred, so say so."""
-    verdict = _date_ambiguity(pd.Series(["01/03/2005", "05/06/2005", "02/11/2005"]))
+    verdict = date_ambiguity(pd.Series(["01/03/2005", "05/06/2005", "02/11/2005"]))
     assert verdict is not None
     assert "AMBIGUOUS" in verdict
     assert "Confirm with the supplier" in verdict
@@ -41,12 +41,12 @@ def test_ambiguous_dates_are_flagged_not_guessed():
     [["DIPPER", "LOGGER", "DIPPER"], ["n/a", "", "--"], ["1.5", "2.5", "3.5"]],
 )
 def test_non_dates_are_not_flagged(values):
-    assert _date_ambiguity(pd.Series(values)) is None
+    assert date_ambiguity(pd.Series(values)) is None
 
 
 def test_too_few_values_to_judge_returns_nothing():
     """Below a handful of parseable values the pattern is noise, not evidence."""
-    assert _date_ambiguity(pd.Series(["01/03/2005", "05/06/2005"])) is None
+    assert date_ambiguity(pd.Series(["01/03/2005", "05/06/2005"])) is None
 
 
 def test_missing_crs_is_reported_as_a_blocker():

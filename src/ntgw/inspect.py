@@ -40,7 +40,7 @@ SAMPLE_VALUES = 3
 _SLASH_DATE = re.compile(r"^\s*(\d{1,4})[/-](\d{1,2})[/-](\d{1,4})")
 
 
-def _date_ambiguity(series) -> str | None:
+def date_ambiguity(series) -> str | None:
     """Flag slash/dash dates whose day-vs-month order cannot be inferred."""
     sample = series.dropna().astype(str).head(2000)
     parts = [m.groups() for m in (_SLASH_DATE.match(v) for v in sample) if m]
@@ -96,7 +96,7 @@ def _describe_series(name, series, show_values: bool) -> str:
     else:
         distinct = non_null.nunique()
         bits.append(f"  distinct {distinct}")
-        ambiguity = _date_ambiguity(non_null)
+        ambiguity = date_ambiguity(non_null)
         if ambiguity:
             bits.append(f"\n      ^ date format: {ambiguity}")
         if show_values:

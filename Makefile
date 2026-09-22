@@ -5,7 +5,7 @@ SHELL := /bin/sh
 PYTHON ?= python
 COMPOSE ?= docker compose
 
-.PHONY: help install-hooks check-hooks doctor inspect db-up db-down db-wait schema test test-fast lint fmt clean
+.PHONY: help install-hooks check-hooks doctor inspect db-up db-down db-wait schema test test-strict test-fast lint fmt clean
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -51,6 +51,10 @@ schema: ## Apply the schema to the running database
 
 test: check-hooks ## Run the full test suite
 	@$(PYTHON) -m pytest -ra
+
+test-strict: check-hooks ## Run the suite and fail on ANY skip (CI / provisioned env)
+	@$(PYTHON) scripts/doctor.py
+	@$(PYTHON) -m pytest -ra --strict-skips
 
 test-fast: check-hooks ## Run the test suite, skipping Monte Carlo checks
 	@$(PYTHON) -m pytest -ra -m "not slow"

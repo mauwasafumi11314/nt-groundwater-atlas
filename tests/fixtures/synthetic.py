@@ -10,19 +10,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from ntgw.crs import ATLAS_EPSG
+# MGA53_ENVELOPE is re-exported from the package: it is a derived property of
+# zone 53, not a fixture choice, and an independent copy here drifted (its
+# southern bound sat ~600 km outside the NT).
+from ntgw.crs import ATLAS_EPSG, MGA53_ENVELOPE  # noqa: F401
 
 #: Approximate MGA zone 53 envelope of the Western Davenport area, used to
 #: catch wrong-zone or swapped lat/lon loads. Deliberately generous.
 WCD_ENVELOPE = {"min_x": 300_000.0, "max_x": 560_000.0, "min_y": 7_540_000.0, "max_y": 7_760_000.0}
-
-#: Valid range for any MGA zone 53 coordinate in the NT.
-MGA53_ENVELOPE = {
-    "min_x": 100_000.0,
-    "max_x": 900_000.0,
-    "min_y": 6_600_000.0,
-    "max_y": 8_000_000.0,
-}
 
 
 def synthetic_bores(n: int = 6, seed: int = 11) -> pd.DataFrame:
